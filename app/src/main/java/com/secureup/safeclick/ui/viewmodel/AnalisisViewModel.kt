@@ -20,7 +20,11 @@ data class AnalisisUiState(
     val historial: List<AnalisisItem> = emptyList(),
     val analisisRestantes: Int = 3,
     val esPremium: Boolean = false,
-    val isLoading: Boolean = false
+    val isLoading: Boolean = false,
+    val llegoPorLimite: Boolean = false,
+    val signedIn: Boolean = false,
+    val accountEmail: String = "",
+    val isGuest: Boolean = true
 )
 
 class AnalisisViewModel : ViewModel() {
@@ -67,18 +71,35 @@ class AnalisisViewModel : ViewModel() {
     }
 
     fun activarPremium() {
-        _uiState.update { it.copy(esPremium = true, analisisRestantes = 3) }
+        _uiState.update { it.copy(esPremium = true, analisisRestantes = 3, llegoPorLimite = false) }
     }
 
     fun consumirAnalisisSiNecesario(): Boolean {
         // Devuelve true si puede analizar, false si necesita ir a Premium
         val current = _uiState.value
-        if (current.esPremium) return true
-        if (current.analisisRestantes <= 0) return false
+        if (current.esPremium) {
+            return true
+        }
+        if (current.analisisRestantes <= 0) {
+            _uiState.update { it.copy(llegoPorLimite = true) }
+            return false
+        }
         return true
     }
 
     fun clearResultado() {
         _uiState.update { it.copy(resultado = null) }
+    }
+
+    fun signIn(email: String) {
+        _uiState.update { it.copy(signedIn = true, accountEmail = email, isGuest = false) }
+    }
+
+    fun signOut() {
+        _uiState.update { it.copy(signedIn = false, accountEmail = "", isGuest = true, esPremium = false) }
+    }
+
+    fun setGuest(value: Boolean) {
+        _uiState.update { it.copy(isGuest = value, signedIn = false) }
     }
 }

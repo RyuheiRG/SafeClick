@@ -26,6 +26,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.secureup.safeclick.ui.screens.AnalizarScreen
 import com.secureup.safeclick.ui.screens.ResultadoScreen
+import com.secureup.safeclick.ui.screens.LoginScreen
 import com.secureup.safeclick.ui.theme.Background
 import com.secureup.safeclick.ui.theme.Border
 import com.secureup.safeclick.ui.theme.Primary
@@ -59,7 +60,7 @@ fun SafeClickNavHost(
         bottomBar = {
             // Resultado NO debe tener barra inferior
             val currentRoute = currentDestination?.route
-            if (currentRoute != "resultado") {
+            if (currentRoute != "resultado" && currentRoute != "pago" && currentRoute != "pago_exitoso" && currentRoute != "login") {
                 NavigationBar(
                     containerColor = Background,
                     tonalElevation = 0.dp
@@ -95,7 +96,7 @@ fun SafeClickNavHost(
     ) { paddingValues ->
         NavHost(
             navController = navController,
-            startDestination = BottomNavDestinations.Analizar.route,
+            startDestination = "login",
             modifier = Modifier.padding(paddingValues)
         ) {
             composable(BottomNavDestinations.Analizar.route) {
@@ -106,6 +107,9 @@ fun SafeClickNavHost(
                     },
                     onIrAPremium = {
                         navController.navigate(BottomNavDestinations.Premium.route)
+                    },
+                    onLogin = {
+                        navController.navigate("login")
                     }
                 )
             }
@@ -118,19 +122,72 @@ fun SafeClickNavHost(
                     }
                 )
             }
-            // Fase 1 solo Analizar y Resultado; Historial/Premium mínimos no requeridos aún
             composable(BottomNavDestinations.Historial.route) {
-                Text(
-                    text = "Historial (Fase 1)",
-                    modifier = Modifier.padding(24.dp),
-                    color = TextSecondary
+                com.secureup.safeclick.ui.screens.HistorialScreen(
+                    historial = uiState.historial,
+                    onItemClick = { item: com.secureup.safeclick.ui.viewmodel.AnalisisItem ->
+                        viewModel.setResultado(item.resultado)
+                        navController.navigate("resultado")
+                    }
                 )
             }
             composable(BottomNavDestinations.Premium.route) {
-                Text(
-                    text = "Premium (Fase 1)",
-                    modifier = Modifier.padding(24.dp),
-                    color = TextSecondary
+                com.secureup.safeclick.ui.screens.PremiumScreen(
+                    esPremium = uiState.esPremium,
+                    llegoPorLimite = uiState.llegoPorLimite,
+                    onSuscribirse = {
+                        if (uiState.isGuest) {
+                            navController.navigate("login")
+                        } else {
+                            navController.navigate("pago")
+                        }
+                    }
+                )
+            }
+            composable("pago") {
+                com.secureup.safeclick.ui.screens.PagoScreen(
+                    onBack = {
+                        navController.popBackStack()
+                    },
+                    onPagoExitoso = {
+                        viewModel.activarPremium()
+                        navController.navigate("pago_exitoso") {
+                            popUpTo("pago") { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable("pago_exitoso") {
+                com.secureup.safeclick.ui.screens.PagoExitosoScreen(
+                    onEmpezarAnalizar = {
+                        navController.navigate(BottomNavDestinations.Analizar.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    }
+                )
+            }
+            composable("login") {
+                com.secureup.safeclick.ui.screens.LoginScreen(
+                    signedIn = uiState.signedIn,
+                    accountEmail = uiState.accountEmail,
+                    onSignedIn = { email ->
+                        viewModel.signIn(email)
+                        viewModel.setGuest(false)
+                        navController.navigate(BottomNavDestinations.Analizar.route) {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    },
+                    onSignOut = { viewModel.signOut() },
+                    onBack = {
+                        // Si vuelve desde login sin cuenta, permitir salir a inicio? pero ahora es start
+                    },
+                    onContinueWithoutAccount = {
+                        viewModel.signOut()
+                        viewModel.setGuest(true)
+                        navController.navigate(BottomNavDestinations.Analizar.route) {
+                            popUpTo("login") { inclusive = true }
+                        }
+                    }
                 )
             }
         }

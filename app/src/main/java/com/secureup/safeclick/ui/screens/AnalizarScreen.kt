@@ -2,6 +2,7 @@ package com.secureup.safeclick.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,7 +35,8 @@ import com.secureup.safeclick.ui.viewmodel.AnalisisViewModel
 fun AnalizarScreen(
     viewModel: AnalisisViewModel,
     onAnalizarClick: () -> Unit,
-    onIrAPremium: () -> Unit
+    onIrAPremium: () -> Unit,
+    onLogin: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -46,13 +49,28 @@ fun AnalizarScreen(
     ) {
         Spacer(modifier = Modifier.height(20.dp))
 
-        Text(
-            text = "Analizar enlace",
-            style = MaterialTheme.typography.headlineMedium.copy(
-                color = Primary,
-                fontWeight = FontWeight.Bold
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "Analizar enlace",
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    color = Primary,
+                    fontWeight = FontWeight.Bold
+                )
             )
-        )
+            androidx.compose.material3.TextButton(onClick = onLogin) {
+                Text(
+                    text = if (uiState.signedIn) "Mi cuenta" else "Ingresar",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Primary,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -113,7 +131,7 @@ fun AnalizarScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            text = if (uiState.esPremium) "Premium activo" else "Te quedan ${uiState.analisisRestantes} análisis gratis",
+            text = if (uiState.esPremium) "Análisis ilimitados" else "Te quedan ${uiState.analisisRestantes} análisis gratis hoy",
             style = MaterialTheme.typography.bodySmall.copy(
                 color = TextSecondary
             )
